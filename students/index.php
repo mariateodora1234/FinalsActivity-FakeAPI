@@ -5,22 +5,25 @@
     header('Access-Control-Allow-Headers: Content-Type');
     header('Content-Type: application/json');
 
-    $method = $_SERVER['REQUEST_METHOD'];
-    $data = [
-        [            
-            "name" => "Juan Dela Cruz",
-            "course" => "BEED"
-        ],
-        [            
-            "name" => "Pepito Manaloto",
-            "course" => "AB PolSci"
-        ],
-        [            
-            "name" => "Renmark Salalila",
-            "course" => "BSIT"
-        ]
-    ];
+    $conn = mysqli_connect("localhost","root","","db_students");
 
+    if(!$conn){
+        die("Connection Error");
+    }
+
+    $query = "select * from students";
+    $result = mysqli_query($conn,$query);
+   
+
+    $method = $_SERVER['REQUEST_METHOD'];
+    if(mysqli_num_rows($result) > 0){
+        while($show = mysqli_fetch_assoc($result)){
+            $data[] = $show;
+        }
+    }else{
+        echo "No Record Found!";
+    }
+   
 
 
     if($method == "GET") {        
@@ -31,15 +34,20 @@
                 echo json_encode('No Record Found!');
         }
         else
+        if(isset($data)){
             echo json_encode($data);
+        }
     }
 
     if($method == "POST") {
         $temp = urldecode(file_get_contents('php://input'));
         parse_str($temp, $value);
 
-        array_push($data, ["name" => $value['name'], "course" => $value['course']]);
- 
+       
+        $name = $value['name'];
+        $course = $value['course'];
+        $query = "INSERT INTO students(name,course) VALUES ('$name','$course')";
+        $add = mysqli_query($conn,$query);
         $response = [
             "message" => "Post Success",
             "data" => $data
@@ -48,45 +56,34 @@
     }
 
     if($method == "PUT") {
-        if(isset($_GET['id'])) {
-            if(isset($data[$_GET['id']])) {
-                $temp = urldecode(file_get_contents('php://input'));
-                parse_str($temp, $value);
-     
-                $data[$_GET['id']]['name'] = $value['name'];
-                $data[$_GET['id']]['course'] = $value['course'];
+        $temp = urldecode(file_get_contents('php://input'));
+        parse_str($temp, $value);
+        
+       
+        $id = $value['id'];
+        $name = $value['name'];
+        $course = $value['course'];
+        $query = "UPDATE students SET name = '$name', course = '$course' WHERE id = '$id'";
+        $update = mysqli_query($conn,$query);
 
-                $response = [
-                    "message" => "Put Success",
-                    "data" => $data
-                ];
-                echo json_encode($response);
-            }                
-            else {
-                echo json_encode('No Record Found!');
-            }
-        }
-        else        
-            echo json_encode('No Record Found!');
+        $response = [
+            "message" => "Put Success",
+            "data" => $data
+        ];
+        echo json_encode($response); 
     }
 
     if($method == "DELETE") {
-        if(isset($_GET['id'])) {
-            if(isset($data[$_GET['id']])) {
-                unset($data[$_GET['id']]);
-                
-                $response = [
-                    "message" => "Delete Success",
-                    "data" => $data
-                ];
-                echo json_encode($response);
-            }                
-            else {
-                echo json_encode('No Record Found!');
-            }
-        }
-        else        
-            echo json_encode('No Record Found!');
+        $temp = urldecode(file_get_contents('php://input'));
+        parse_str($temp, $value);
+        $id = $value['id'];
+        $query = "DELETE FROM students WHERE id = '$id'";
+        $deletes = mysqli_query($conn,$query);
+        $response = [
+            "message" => "Delete Success",
+            "data" => $data
+        ];
+        echo json_encode($response);
     }
 
 
